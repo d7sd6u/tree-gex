@@ -33,7 +33,7 @@ jobs:
 
       - name: Pack
         id: pack
-        run: pnpm pack
+        run: pnpm pack --out npm-package.tgz
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -42,4 +42,4 @@ jobs:
           name: ${{ github.ref_name }}
           tag_name: ${{ github.ref }}
           files: |
-            tree-gex-${{ github.event.head_commit.message }}.tgz
+            npm-package.tgz
