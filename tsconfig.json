@@ -1,0 +1,15 @@
+{
+  "extends": "@tsconfig/strictest/tsconfig.json",
+  "compilerOptions": {
+    "module": "node16",
+    "moduleResolution": "node16",
+    "resolveJsonModule": true,
+    "removeComments": true,
+    "outDir": "../dist",
+    "sourceMap": false,
+    "types": [],
+    "esModuleInterop": true
+  },
+  "include": ["./**/*", "./**/*.json"],
+  "exclude": ["tsconfig.json", "tsconfig-build.json"]
+}
