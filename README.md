@@ -17,7 +17,7 @@ import * as w from 'tree-gex';
 
 const document = parse(graphql);
 
-IdDirective = {
+const argWithIsIdDirective = {
   kind: 'InputValueDefinition',
   name: {
     kind: 'Name',
