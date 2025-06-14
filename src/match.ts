@@ -1,21 +1,21 @@
 import { CapturedGroups, mergeCapturedGroups } from './capture.js';
-import { CustomPredicate, predSymbol } from './predicates.js';
+import { CustomPredicate, optionalSymbol, predSymbol } from './predicates.js';
 import { isObject } from './utils.js';
 
+const isSpecial = (pattern: unknown): pattern is CustomPredicate =>
+  isObject(pattern) && predSymbol in pattern;
 export function matchAndCapture(
   v: unknown,
   pattern: unknown,
-  groupName?: string,
+  groupName: string | undefined,
+  visited: Set<unknown> = new Set(),
 ): [boolean, CapturedGroups] {
-  const special = pattern as
-    | CustomPredicate
-    | string
-    | number
-    | symbol
-    | null
-    | undefined;
-  if (isObject(special) && predSymbol in special) {
-    const [matched, groups] = special[predSymbol](v);
+  if (isObject(v)) {
+    if (visited.has(v)) return [false, {}];
+    visited.add(v);
+  }
+  if (isSpecial(pattern)) {
+    const [matched, groups] = pattern[predSymbol](v);
     return [
       matched,
       groupName ? { [groupName]: [{ value: v, groups }] } : groups,
@@ -24,16 +24,23 @@ export function matchAndCapture(
   if (isObject(pattern) && isObject(v)) {
     const accGroups: CapturedGroups[] = [];
     for (const key in pattern) {
-      if (!(key in v)) return [false, {}];
+      const patternMatcher = (pattern as Record<string, unknown>)[key];
+      if (!(key in v)) {
+        if (isSpecial(patternMatcher) && patternMatcher[optionalSymbol])
+          return [true, {}];
+        return [false, {}];
+      }
       const value = (v as Record<string, unknown>)[key];
       const [matched, groups] = matchAndCapture(
         value,
-        (pattern as Record<string, unknown>)[key],
+        patternMatcher,
+        undefined,
+        visited,
       );
       if (!matched) return [false, {}];
       accGroups.push(groups);
     }
-    const totalCapture = accGroups.reduce(mergeCapturedGroups);
+    const totalCapture = accGroups.reduce(mergeCapturedGroups, {});
     return [
       true,
       groupName

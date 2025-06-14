@@ -84,6 +84,41 @@ describe('matching', () => {
     ]);
   });
 
+  test('it matches optional properties', () => {
+    expect(
+      w.accumWalkMatch(
+        {
+          without: {
+            payload: 123,
+          },
+          withCorrect: {
+            payload: 444,
+            key: '1234',
+          },
+          withIncorrect: {
+            payload: 555,
+            key: 'this_should_not_match',
+          },
+        },
+        { payload: w.any(), key: w.optional(w.regex(/\d+/)) },
+      ),
+    ).toEqual([
+      {
+        groups: {},
+        match: {
+          payload: 123,
+        },
+      },
+      {
+        groups: {},
+        match: {
+          key: '1234',
+          payload: 444,
+        },
+      },
+    ]);
+  });
+
   test('it matches custom predicates', () => {
     expect(
       w.accumWalkMatch(
@@ -94,7 +129,12 @@ describe('matching', () => {
             hidden: 3,
           },
         },
-        { otherField: w.p((v) => v === 123, 'capture') },
+        {
+          otherField: w.group(
+            w.p((v) => v === 123),
+            'capture',
+          ),
+        },
       ),
     ).toMatchInlineSnapshot([
       {
@@ -223,6 +263,59 @@ describe('matching', () => {
 });
 
 describe('capturing', () => {
+  test('it captures every array member that matches', () => {
+    expect(
+      w.accumWalkMatch(
+        { arr: ['start123', 'other444', 'end555k'] },
+        {
+          arr: w.arrayFor(
+            w.group(w.regex(/\d/), 'digits'),
+            w.group(w.regex(/\d$/), 'digitsend'),
+            w.group(w.regex(/other/), 'other'),
+            w.group(w.regex(/nonexistent/), 'nonexistent'),
+          ),
+        },
+      ),
+    ).toEqual([
+      {
+        groups: {
+          digits: [
+            {
+              groups: {},
+              value: 'start123',
+            },
+            {
+              groups: {},
+              value: 'other444',
+            },
+            {
+              groups: {},
+              value: 'end555k',
+            },
+          ],
+          digitsend: [
+            {
+              groups: {},
+              value: 'start123',
+            },
+            {
+              groups: {},
+              value: 'other444',
+            },
+          ],
+          other: [
+            {
+              groups: {},
+              value: 'other444',
+            },
+          ],
+        },
+        match: {
+          arr: ['start123', 'other444', 'end555k'],
+        },
+      },
+    ]);
+  });
   test('captures single field', () => {
     expect(
       w.accumWalkMatch(

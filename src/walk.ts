@@ -12,9 +12,9 @@ export function walk(
   cb(a);
   if (isObject(a)) {
     if (Array.isArray(a)) {
-      return a.forEach((v) => walk(v, cb));
+      return a.forEach((v) => walk(v, cb, visited));
     }
-    return Object.values(a).forEach((v) => walk(v, cb));
+    return Object.values(a).forEach((v) => walk(v, cb, visited));
   }
 }
 export function walkMatch(
@@ -23,7 +23,7 @@ export function walkMatch(
   cb: (v: unknown, groups: CapturedGroups) => void,
 ) {
   walk(v, (node) => {
-    const [matched, groups] = matchAndCapture(node, pattern);
+    const [matched, groups] = matchAndCapture(node, pattern, undefined);
     if (matched) {
       cb(node, groups);
     }
