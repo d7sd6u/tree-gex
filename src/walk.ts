@@ -2,7 +2,13 @@ import { CapturedGroups } from './capture.js';
 import { matchAndCapture } from './match.js';
 import { isObject } from './utils.js';
 
-export function walk(a: unknown, cb: (v: unknown) => void) {
+export function walk(
+  a: unknown,
+  cb: (v: unknown) => void,
+  visited: Set<unknown> = new Set(),
+) {
+  if (visited.has(a)) return;
+  visited.add(a);
   cb(a);
   if (isObject(a)) {
     if (Array.isArray(a)) {
