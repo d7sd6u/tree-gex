@@ -1,6 +1,6 @@
 {
   "name": "tree-gex",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Match tree structures using regex-inspired tree matchers",
   "main": "dist/index.js",
   "type": "module",
