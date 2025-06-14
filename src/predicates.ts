@@ -80,7 +80,7 @@ export const arraySome = (matcher: unknown) =>
   pred((v) => {
     if (!Array.isArray(v)) return false;
     for (const el of v) {
-      const [matched, groups] = matchAndCapture(el, matcher);
+      const [matched, groups] = matchAndCapture(el, matcher, undefined);
       if (matched) return [true, groups];
     }
     return [false, {}];
@@ -89,7 +89,7 @@ export const arrayZeroOrOne = (matcher: unknown) =>
   pred((v) => {
     if (!Array.isArray(v)) return false;
     for (const el of v) {
-      const [matched, groups] = matchAndCapture(el, matcher);
+      const [matched, groups] = matchAndCapture(el, matcher, undefined);
       if (matched) return [true, groups];
     }
     return [true, {}];
@@ -100,7 +100,7 @@ export const arrayFor = (...matchers: unknown[]) =>
     const accGroups: CapturedGroups[] = [];
     for (const el of v) {
       for (const matcher of matchers) {
-        const [matched, groups] = matchAndCapture(el, matcher);
+        const [matched, groups] = matchAndCapture(el, matcher, undefined);
         if (matched) accGroups.push(groups);
       }
     }
@@ -110,15 +110,15 @@ export const arrayFor = (...matchers: unknown[]) =>
 export const or = (...matchers: [unknown, unknown, ...unknown[]]) =>
   pred((n) => {
     for (const matcher of matchers) {
-      const [matched, captured] = matchAndCapture(n, matcher);
+      const [matched, captured] = matchAndCapture(n, matcher, undefined);
       if (matched) return [true, captured];
     }
     return [false, {}] as const;
   });
 export const and = (left: unknown, right: unknown) =>
   pred((n) => {
-    const [leftMatched, leftCaptured] = matchAndCapture(n, left);
-    const [rightMatched, rightCaptured] = matchAndCapture(n, right);
+    const [leftMatched, leftCaptured] = matchAndCapture(n, left, undefined);
+    const [rightMatched, rightCaptured] = matchAndCapture(n, right, undefined);
     if (leftMatched && rightMatched)
       return [true, mergeCapturedGroups(leftCaptured, rightCaptured)] as const;
     return [false, {}] as const;
