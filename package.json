@@ -9,7 +9,8 @@
     "test:dev": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "build": "pnpm tsup  ./src --dts --format esm --no-splitting"
+    "build": "rm -rf dist && pnpm tsup  ./src --dts --format esm --no-splitting",
+    "prepack": "pnpm build"
   },
   "keywords": [],
   "author": "d7sd6u",
