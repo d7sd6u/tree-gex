@@ -1,0 +1,8 @@
+type Query {
+  cartItem(cartId: ID! @isId, itemId: ID!): CartItem
+    @requiresPermission(permission: "cart.view")
+}
+type Mutation {
+  deleteItem(id: ID! @isId): Boolean
+    @requiresPermission(permission: "card.modify")
+}

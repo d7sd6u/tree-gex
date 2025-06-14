@@ -1,0 +1,21 @@
+type Query {
+  profile: Profile! @withoutId
+  cartItem(cartId: ID! @isId, itemId: ID!): CartItem
+    @requiresPermission(permission: "cart.view")
+
+  threads(
+    where: ThreadsWhereInput! @isPolymorphicId(field: "metadataId")
+  ): [Thread!]!
+
+  carts(where: CartsWhereInput!): [Cart!]!
+}
+
+input ThreadsWhereInput {
+  metadataId: Int!
+  status: ThreadStatus
+}
+
+input CartsWhereInput {
+  id: ID!
+  size: Int
+}
