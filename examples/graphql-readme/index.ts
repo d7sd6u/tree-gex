@@ -23,7 +23,7 @@ const argWithIsIdDirective = {
       },
     },
   ],
-};
+} as const;
 
 const actionDefinition = {
   kind: 'FieldDefinition',
@@ -34,7 +34,7 @@ const actionDefinition = {
   },
 
   arguments: w.arrayZeroOrOne(argWithIsIdDirective),
-};
+} as const;
 
 const matches = w.accumWalkMatch(document, {
   kind: 'ObjectTypeDefinition',
@@ -42,11 +42,10 @@ const matches = w.accumWalkMatch(document, {
   fields: w.arrayFor(w.group(actionDefinition, 'actions')),
 });
 
-console.log(
-  matches
-    .flatMap((type) => type.groups['actions'])
-    .map((action) => ({
-      action: action?.groups['action']?.[0]?.value,
-      arg: action?.groups['arg']?.[0]?.value,
-    })),
-);
+const actions: { action: string; arg: string | undefined }[] = matches
+  .flatMap((type) => type.groups['actions'] ?? [])
+  .map((action) => ({
+    action: action.groups['action'][0].value,
+    arg: action.groups['arg']?.[0].value,
+  }));
+console.log(actions);

@@ -8,23 +8,24 @@ process.chdir(import.meta.dirname);
 const graphql = readFileSync('./schema.graphql', { encoding: 'utf-8' });
 const document = parse(graphql);
 
-const literalIdInputDefinition = (groupName: string) => ({
-  kind: 'InputValueDefinition',
-  name: {
-    kind: 'Name',
-    value: w.group('id', groupName),
-  },
-  type: {
-    kind: 'NonNullType',
+const literalIdInputDefinition = <const T extends string>(groupName: T) =>
+  ({
+    kind: 'InputValueDefinition',
+    name: {
+      kind: 'Name',
+      value: w.group('id', groupName),
+    },
     type: {
-      kind: 'NamedType',
-      name: {
-        kind: 'Name',
-        value: 'ID',
+      kind: 'NonNullType',
+      type: {
+        kind: 'NamedType',
+        name: {
+          kind: 'Name',
+          value: 'ID',
+        },
       },
     },
-  },
-});
+  }) as const;
 const argWithIsIdDirective = {
   kind: 'InputValueDefinition',
   name: {
@@ -56,7 +57,7 @@ const argWithIsIdDirective = {
       ),
     },
   ],
-};
+} as const;
 const argWithIsPolymorphicIdDirective = {
   kind: 'InputValueDefinition',
   name: {
@@ -91,8 +92,8 @@ const argWithIsPolymorphicIdDirective = {
       ),
     },
   ],
-};
-const whereArgWithIdField = (data: unknown) => ({
+} as const;
+const whereArgWithIdField = <const T>(data: T) => ({
   kind: 'InputValueDefinition',
   name: {
     kind: 'Name',
@@ -119,61 +120,62 @@ const whereArgWithIdField = (data: unknown) => ({
     },
   },
 });
-const actionDefinition = (document: unknown) => ({
-  kind: 'FieldDefinition',
+const actionDefinition = <const T>(document: T) =>
+  ({
+    kind: 'FieldDefinition',
 
-  name: {
-    kind: 'Name',
-    value: w.group(w.string(), 'action'),
-  },
+    name: {
+      kind: 'Name',
+      value: w.group(w.string(), 'action'),
+    },
 
-  directives: w.optional(
-    w.arrayFor(
-      w.or(
-        w.group(
+    directives: w.optional(
+      w.arrayFor(
+        w.or(
+          w.group(
+            {
+              kind: 'Directive',
+              name: {
+                kind: 'Name',
+                value: 'withoutId',
+              },
+            },
+            'withoutId',
+          ),
+
           {
             kind: 'Directive',
             name: {
               kind: 'Name',
-              value: 'withoutId',
+              value: 'requiresPermission',
             },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: {
+                  kind: 'Name',
+                  value: 'permission',
+                },
+                value: {
+                  kind: 'StringValue',
+                  value: w.group(w.string(), 'requiresPermissions'),
+                },
+              },
+            ],
           },
-          'withoutId',
         ),
-
-        {
-          kind: 'Directive',
-          name: {
-            kind: 'Name',
-            value: 'requiresPermission',
-          },
-          arguments: [
-            {
-              kind: 'Argument',
-              name: {
-                kind: 'Name',
-                value: 'permission',
-              },
-              value: {
-                kind: 'StringValue',
-                value: w.group(w.string(), 'requiresPermissions'),
-              },
-            },
-          ],
-        },
       ),
     ),
-  ),
 
-  arguments: w.arrayZeroOrOne(
-    w.or(
-      argWithIsIdDirective,
-      argWithIsPolymorphicIdDirective,
-      literalIdInputDefinition('arg'),
-      whereArgWithIdField(document),
+    arguments: w.arrayZeroOrOne(
+      w.or4(
+        argWithIsIdDirective,
+        argWithIsPolymorphicIdDirective,
+        literalIdInputDefinition('arg'),
+        whereArgWithIdField(document),
+      ),
     ),
-  ),
-});
+  }) as const;
 
 function* getActions() {
   const actionTypes = w.accumWalkMatch(document, {
@@ -186,11 +188,11 @@ function* getActions() {
   } of actionTypes) {
     for (const { groups } of actions ?? []) {
       yield {
-        action: groups['action']?.[0]?.value,
+        action: groups['action'][0].value,
         withoutId: !!groups['withoutId'],
         isPolymorphic: !!groups['isPolymorphic'],
         arg: w.withv(
-          [groups['arg']?.[0]?.value, groups['field']?.[0]?.value],
+          [groups['arg']?.[0].value, groups['field']?.[0].value],
           (arg, field) => (field ? `${arg}.${field}` : arg),
         ),
         requiredPermissions:

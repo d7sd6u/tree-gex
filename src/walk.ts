@@ -1,5 +1,6 @@
 import { CapturedGroups } from './capture.js';
 import { matchAndCapture } from './match.js';
+import { Resolve, ResolveGroups } from './types.js';
 import { isObject } from './utils.js';
 
 export function walk(
@@ -30,14 +31,17 @@ export function walkMatch(
   });
 }
 
-export function accumWalkMatch(
+export function accumWalkMatch<const P>(
   v: unknown,
-  pattern: unknown,
-): { match: unknown; groups: CapturedGroups }[] {
-  const matches: { match: unknown; groups: CapturedGroups }[] = [];
+  pattern: P,
+): { match: Resolve<P>; groups: ResolveGroups<P> }[] {
+  const matches: { match: Resolve<P>; groups: ResolveGroups<P> }[] = [];
 
   walkMatch(v, pattern, (node, groups) => {
-    matches.push({ match: node, groups });
+    matches.push({
+      match: node as Resolve<P>,
+      groups: groups as ResolveGroups<P>,
+    });
   });
 
   return matches;

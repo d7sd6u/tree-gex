@@ -1,9 +1,7 @@
 import { CapturedGroups, mergeCapturedGroups } from './capture.js';
-import { CustomPredicate, optionalSymbol, predSymbol } from './predicates.js';
+import { Optional, Pred } from './predicates/classes.js';
 import { isObject } from './utils.js';
 
-const isSpecial = (pattern: unknown): pattern is CustomPredicate =>
-  isObject(pattern) && predSymbol in pattern;
 export function matchAndCapture(
   v: unknown,
   pattern: unknown,
@@ -14,8 +12,8 @@ export function matchAndCapture(
     if (visited.has(v)) return [false, {}];
     visited.add(v);
   }
-  if (isSpecial(pattern)) {
-    const [matched, groups] = pattern[predSymbol](v);
+  if (pattern instanceof Pred) {
+    const [matched, groups] = pattern.matches(v);
     return [
       matched,
       groupName ? { [groupName]: [{ value: v, groups }] } : groups,
@@ -26,8 +24,7 @@ export function matchAndCapture(
     for (const key in pattern) {
       const patternMatcher = (pattern as Record<string, unknown>)[key];
       if (!(key in v)) {
-        if (isSpecial(patternMatcher) && patternMatcher[optionalSymbol])
-          return [true, {}];
+        if (patternMatcher instanceof Optional) return [true, {}];
         return [false, {}];
       }
       const value = (v as Record<string, unknown>)[key];

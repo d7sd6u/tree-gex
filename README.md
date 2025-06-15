@@ -1,4 +1,4 @@
-Match tree data structures using regex inspired tree matchers. Useful for inspecting and manipulating AST trees:
+Match tree data structures using regex inspired tree matchers. Matches and groups are fully typed. Useful for inspecting and manipulating AST trees:
 
 ```graphql
 type Query {
@@ -32,7 +32,7 @@ const argWithIsIdDirective = {
       },
     },
   ],
-};
+} as const;
 
 const actionDefinition = {
   kind: 'FieldDefinition',
@@ -43,7 +43,7 @@ const actionDefinition = {
   },
 
   arguments: w.arrayZeroOrOne(argWithIsIdDirective),
-};
+} as const;
 
 const matches = w.accumWalkMatch(document, {
   kind: 'ObjectTypeDefinition',
@@ -51,21 +51,21 @@ const matches = w.accumWalkMatch(document, {
   fields: w.arrayFor(w.group(actionDefinition, 'actions')),
 });
 
-expect(
-  matches
-    .flatMap((type) => type.groups['actions'])
-    .map((action) => ({
-      action: action?.groups['action']?.[0]?.value,
-      arg: action?.groups['arg']?.[0]?.value,
-    })),
-).toEqual([
+const actions: { action: string; arg: string | undefined }[] = matches
+  .flatMap((type) => type.groups['actions'] ?? [])
+  .map((action) => ({
+    action: action.groups['action'][0].value,
+    arg: action.groups['arg']?.[0].value,
+  }));
+
+expect(actions).toEqual([
   { action: 'cartItem', arg: 'cartId' },
-  { action: 'deleteItem', arg: 'cartId' },
+  { action: 'deleteItem', arg: 'id' },
 ]);
 ```
 
 # Installation
 
 ```bash
-pnpm add https://github.com/d7sd6u/tree-gex/releases/download/v0.0.2/package.tgz
+pnpm add https://github.com/d7sd6u/tree-gex/releases/download/v0.0.3/package.tgz
 ```
