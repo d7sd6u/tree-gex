@@ -27,10 +27,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
-        id: build
-        run: pnpm run build
-
       - name: Pack
         id: pack
         run: pnpm pack --out npm-package.tgz
