@@ -67,5 +67,7 @@ expect(actions).toEqual([
 # Installation
 
 ```bash
-pnpm add https://github.com/d7sd6u/tree-gex/releases/download/v0.0.3/package.tgz
+pnpm add https://github.com/d7sd6u/tree-gex/releases/download/v0.0.3/npm-package.tgz
+# or
+pnpm add tree-gex
 ```
