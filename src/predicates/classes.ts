@@ -1,5 +1,5 @@
 import { CapturedGroups, mergeCapturedGroups } from '../capture.js';
-import { MatcherRes, matchAndCapture } from '../match.js';
+import { MatcherRes, getStructuredRes, matchAndCapture } from '../match.js';
 import { Resolve, ResolveGroups } from '../types.js';
 
 export abstract class Pred {
@@ -140,14 +140,22 @@ export class ArrayFor<const P> extends Pred {
   public override matches(node: unknown): MatcherRes {
     if (!Array.isArray(node)) return [false, {}];
     const accGroups: CapturedGroups[] = [];
+    const replacements: { value: unknown }[] = [];
     for (const el of node) {
       for (const matcher of [this.pattern]) {
-        const [matched, groups] = matchAndCapture(el, matcher, undefined);
-        if (matched) accGroups.push(groups);
+        const { matched, groups, replacement } = getStructuredRes(
+          matchAndCapture(el, matcher, undefined),
+        );
+        if (matched) {
+          accGroups.push(groups);
+          replacements.push(replacement ? replacement.value : el);
+        } else {
+          replacements.push(el);
+        }
       }
     }
     const totalCapture = accGroups.reduce(mergeCapturedGroups, {});
-    return [true, totalCapture];
+    return [true, totalCapture, replacements];
   }
   [arrayForSymbol] = 123;
 }

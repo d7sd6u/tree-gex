@@ -710,4 +710,19 @@ describe('replace', () => {
     });
     expect(data.nested.val).toBe(123);
   });
+  test('it works with arrayFor', () => {
+    const data = {
+      array: [1, 'string', 2, 'test'],
+    };
+    const res = w.walkReplace(data, {
+      array: w.arrayFor(
+        w.transform(w.any(), (m) => (m === 'string' ? '(string)' : m)),
+      ),
+    });
+
+    expect(res).toEqual({
+      array: [1, '(string)', 2, 'test'],
+    });
+    expect(data.array[1]).toBe('string');
+  });
 });
