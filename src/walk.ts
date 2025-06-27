@@ -1,4 +1,3 @@
-import { CapturedGroups } from './capture.js';
 import { getStructuredRes, matchAndCapture } from './match.js';
 import { Resolve, ResolveGroups } from './types.js';
 import { isObject } from './utils.js';
@@ -51,12 +50,12 @@ export function walk(
   if (res) return res.value;
   return a;
 }
-export function walkMatch(
+export function walkMatch<const M>(
   v: unknown,
-  pattern: unknown,
+  pattern: M,
   cb: (
-    v: unknown,
-    groups: CapturedGroups,
+    v: Resolve<M>,
+    groups: ResolveGroups<M>,
     replacement?: { value: unknown },
   ) => void,
   ignore?: IgnorePredicate,
@@ -68,7 +67,7 @@ export function walkMatch(
         matchAndCapture(node, pattern, undefined),
       );
       if (matched) {
-        cb(node, groups, replacement);
+        cb(node as Resolve<M>, groups as ResolveGroups<M>, replacement);
       }
     },
     ignore,
@@ -117,8 +116,8 @@ export function accumWalkMatch<const P>(
     pattern,
     (node, groups, replacement) => {
       matches.push({
-        match: node as Resolve<P>,
-        groups: groups as ResolveGroups<P>,
+        match: node,
+        groups: groups,
         replacement,
       });
     },
