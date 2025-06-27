@@ -2,6 +2,7 @@ import { Resolve, ResolveGroups } from '../types.js';
 import {
   And,
   Any,
+  ArrayEvery,
   ArrayFor,
   ArraySome,
   ArrayZeroOrOne,
@@ -52,6 +53,7 @@ export const arraySome = <const T>(matcher: T) => new ArraySome(matcher);
 export const arrayZeroOrOne = <const T>(matcher: T) =>
   new ArrayZeroOrOne(matcher);
 export const arrayFor = <const T>(matcher: T) => new ArrayFor(matcher);
+export const arrayEvery = <const T>(matcher: T) => new ArrayEvery(matcher);
 export const or = <const L, const R>(left: L, right: R) => new Or(left, right);
 export const or3 = <const L, const R, const X>(left: L, right: R, third: X) =>
   new Or(new Or(left, right), third);

@@ -8,47 +8,36 @@ export function walk(
   ignore?: IgnorePredicate,
 ) {
   const visited = new Set();
-  function recurse(a: unknown): { value: unknown } | undefined {
-    if (visited.has(a)) return;
+  function recurse(a: unknown): { value: unknown } {
+    if (visited.has(a)) return { value: a };
     visited.add(a);
     const replacement = cb(a);
     if (replacement) return replacement;
 
     if (isObject(a)) {
-      let wasReplaced = false;
       if (Array.isArray(a)) {
         const replaced = [];
         for (const [idx, node] of a.entries()) {
           if (!ignore?.(idx, a, node)) {
             const replacement = recurse(node);
-            if (replacement) {
-              replaced.push(replacement.value);
-              wasReplaced = true;
-            } else replaced.push(node);
+            replaced.push(replacement.value);
           }
         }
-        if (!wasReplaced) return { value: a };
         return { value: replaced };
       } else {
         const replaced: [string, unknown][] = [];
         for (const [key, node] of Object.entries(a)) {
           if (!ignore?.(key, a, node)) {
             const replacement = recurse(node);
-            if (replacement) {
-              replaced.push([key, replacement.value]);
-              wasReplaced = true;
-            } else replaced.push([key, node]);
+            replaced.push([key, replacement.value]);
           }
         }
-        if (!wasReplaced) return { value: a };
         return { value: Object.fromEntries(replaced) };
       }
     }
     return { value: a };
   }
-  const res = recurse(a);
-  if (res) return res.value;
-  return a;
+  return recurse(a).value;
 }
 export function walkMatch<const M>(
   v: unknown,
@@ -64,7 +53,7 @@ export function walkMatch<const M>(
     v,
     (node): undefined => {
       const { matched, groups, replacement } = getStructuredRes(
-        matchAndCapture(node, pattern, undefined),
+        matchAndCapture(node, pattern),
       );
       if (matched) {
         cb(node as Resolve<M>, groups as ResolveGroups<M>, replacement);
@@ -83,7 +72,7 @@ export function walkReplace(
     v,
     (node) => {
       const { matched, replacement } = getStructuredRes(
-        matchAndCapture(node, pattern, undefined),
+        matchAndCapture(node, pattern),
       );
       if (matched) {
         return replacement;

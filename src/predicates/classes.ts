@@ -141,6 +141,7 @@ export class ArrayFor<const P> extends Pred {
     if (!Array.isArray(node)) return [false, {}];
     const accGroups: CapturedGroups[] = [];
     const replacements: { value: unknown }[] = [];
+    let hasReplacements = false;
     for (const el of node) {
       for (const matcher of [this.pattern]) {
         const { matched, groups, replacement } = getStructuredRes(
@@ -148,6 +149,7 @@ export class ArrayFor<const P> extends Pred {
         );
         if (matched) {
           accGroups.push(groups);
+          if (replacement) hasReplacements = true;
           replacements.push(replacement ? replacement.value : el);
         } else {
           replacements.push(el);
@@ -155,7 +157,8 @@ export class ArrayFor<const P> extends Pred {
       }
     }
     const totalCapture = accGroups.reduce(mergeCapturedGroups, {});
-    return [true, totalCapture, replacements];
+    if (hasReplacements) return [true, totalCapture, replacements];
+    return [true, totalCapture];
   }
   [arrayForSymbol] = 123;
 }

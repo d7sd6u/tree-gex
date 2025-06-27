@@ -15,13 +15,8 @@ export function getStructuredRes(res: MatcherRes): {
 export function matchAndCapture(
   v: unknown,
   pattern: unknown,
-  groupName: string | undefined,
-  visited: Set<unknown> = new Set(),
+  groupName?: string | undefined,
 ): MatcherRes {
-  if (isObject(v)) {
-    if (visited.has(v)) return [false, {}];
-    visited.add(v);
-  }
   if (pattern instanceof Pred) {
     const { matched, groups, replacement } = getStructuredRes(
       pattern.matches(v),
@@ -51,7 +46,7 @@ export function matchAndCapture(
       }
       const value = (v as Record<string, unknown>)[key];
       const { matched, groups, replacement } = getStructuredRes(
-        matchAndCapture(value, patternMatcher, undefined, visited),
+        matchAndCapture(value, patternMatcher),
       );
       if (!matched) return [false, {}];
       if (replacement) replacements.push([key, replacement.value]);

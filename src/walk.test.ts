@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 
 import * as w from './index.js';
 
@@ -205,59 +205,306 @@ describe('matching', () => {
         },
       ]);
     });
-    test('it matches or', () => {
-      expect(
-        w
-          .accumWalkMatch(
-            {
-              nest: {
-                kind: 'testwhyit',
-                otherField: 123,
-                hidden: 3,
-              },
-              other: { otherField: 44, hi: 'hello' },
-            },
-            { otherField: w.or(123, 44) },
-          )
-          .map((v) => v.match),
-      ).toEqual([
-        {
-          kind: 'testwhyit',
-          otherField: 123,
-          hidden: 3,
-        },
-        {
-          otherField: 44,
-          hi: 'hello',
-        },
-      ]);
+    describe('or', () => {
+      test('it matches or', () => {
+        const data = {
+          nest: {
+            kind: 'testwhyit',
+            otherField: 123,
+            hidden: 3,
+          },
+          other: { otherField: 44, hi: 'hello' },
+        };
+        const pattern = { otherField: w.or(123, 44) };
+        const matches = w.accumWalkMatch(data, pattern).map((v) => v.match);
+        expect(matches).toEqual([
+          {
+            kind: 'testwhyit',
+            otherField: 123,
+            hidden: 3,
+          },
+          {
+            otherField: 44,
+            hi: 'hello',
+          },
+        ]);
+      });
+      test('it matches or with three args', () => {
+        const data = {
+          nest: {
+            kind: 'testwhyit',
+            otherField: 123,
+            hidden: 3,
+          },
+          other: { otherField: 44, hi: 'hello' },
+          extra: { otherField: 3 },
+          isNotHere: { otherField: 666, wontSeeme: 'hi!' },
+        };
+        const pattern = { otherField: w.or3(123, 44, 3) };
+        const matches = w.accumWalkMatch(data, pattern).map((v) => v.match);
+        expect(matches).toEqual([
+          {
+            kind: 'testwhyit',
+            otherField: 123,
+            hidden: 3,
+          },
+          {
+            otherField: 44,
+            hi: 'hello',
+          },
+          {
+            otherField: 3,
+          },
+        ]);
+      });
+      test('it matches or with four args', () => {
+        const data = {
+          nest: {
+            kind: 'testwhyit',
+            otherField: 123,
+            hidden: 3,
+          },
+          other: { otherField: 44, hi: 'hello' },
+          extra: { otherField: 3 },
+          isNotHere: { otherField: 666, willSeeMe: 'hi!' },
+        };
+        const pattern = { otherField: w.or4(123, 44, 3, 666) };
+        const matches = w.accumWalkMatch(data, pattern).map((v) => v.match);
+        expect(matches).toEqual([
+          {
+            kind: 'testwhyit',
+            otherField: 123,
+            hidden: 3,
+          },
+          {
+            otherField: 44,
+            hi: 'hello',
+          },
+          {
+            otherField: 3,
+          },
+          {
+            otherField: 666,
+            willSeeMe: 'hi!',
+          },
+        ]);
+      });
     });
-    test('it matches and', () => {
-      expect(
-        w
-          .accumWalkMatch(
-            {
-              nest: {
-                kind: 'testwhyit',
-                otherField: 123,
-                hidden: 3,
-              },
-              other: {
-                kind: 'why',
-              },
-            },
-            {
-              kind: w.and(w.regex(/why/), w.regex(/it/)),
-            },
-          )
-          .map((v) => v.match),
-      ).toEqual([
-        {
-          kind: 'testwhyit',
-          otherField: 123,
-          hidden: 3,
-        },
-      ]);
+    test('it matches arrays strictly as constants', () => {
+      {
+        const data = [1, 2, 3];
+        const pattern = [1, 2];
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      }
+      {
+        const data = [1, 2, 3];
+        const pattern = [1, 2, 3, 4];
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      }
+      {
+        const data = { [0]: 1, [1]: 2, [2]: 3 };
+        const pattern = [1, 2, 3];
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      }
+      {
+        const data = [1, 2, 3];
+        const pattern = [1, 2, 3];
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).not.toEqual([]);
+      }
+    });
+    describe('and', () => {
+      it('matches when both match', () => {
+        const data = {
+          nest: {
+            kind: 'testwhyit',
+            otherField: 123,
+            hidden: 3,
+          },
+          other: {
+            kind: 'why',
+          },
+        };
+        const pattern = {
+          kind: w.and(w.regex(/why/), w.regex(/it/)),
+        };
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches.map((v) => v.match)).toEqual([
+          {
+            kind: 'testwhyit',
+            otherField: 123,
+            hidden: 3,
+          },
+        ]);
+      });
+      it('does not match when first does not match', () => {
+        const data = {
+          nest: {
+            kind: 'testwhyit',
+            otherField: 123,
+            hidden: 3,
+          },
+          other: {
+            kind: 'why',
+          },
+        };
+        const pattern = {
+          kind: w.and(w.regex(/why_doesnotmatch/), w.regex(/it/)),
+        };
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      });
+      it('does not match when second does not match', () => {
+        const data = {
+          nest: {
+            kind: 'testwhyit',
+            otherField: 123,
+            hidden: 3,
+          },
+          other: {
+            kind: 'why',
+          },
+        };
+        const pattern = {
+          kind: w.and(w.regex(/why/), w.regex(/itother/)),
+        };
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      });
+    });
+    describe('arraySome', () => {
+      it('matches only arrays', () => {
+        const data = { [0]: 'test', [1]: 'string', [2]: 123 };
+        const pattern = w.arraySome(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      });
+      it('matches when array has one match', () => {
+        const data = ['string', 123, null];
+        const pattern = w.arraySome(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([{ match: data, groups: {} }]);
+      });
+      it('matches when array has more than one match', () => {
+        const data = ['string', 123, null, 'other'];
+        const pattern = w.arraySome(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([{ match: data, groups: {} }]);
+      });
+      it('does not match when array has zero matches', () => {
+        const data = [undefined, 123, null];
+        const pattern = w.arraySome(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      });
+    });
+    describe('arrayZeroOrOne', () => {
+      it('matches only arrays', () => {
+        const data = { [0]: 'test', [1]: 44, [2]: 123 };
+        const pattern = w.arrayZeroOrOne(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      });
+      it('matches when array has one match', () => {
+        const data = ['string', 123, null];
+        const pattern = w.arrayZeroOrOne(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([{ match: data, groups: {} }]);
+      });
+      it('does not match when array has more than one match', () => {
+        const data = ['string', 123, null, 'other'];
+        const pattern = w.arrayZeroOrOne(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      });
+      it('matches when array has zero matches', () => {
+        const data = [undefined, 123, null];
+        const pattern = w.arrayZeroOrOne(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([{ match: data, groups: {} }]);
+      });
+    });
+    describe('arrayFor', () => {
+      it('matches only arrays', () => {
+        const data = { [0]: 'test', [1]: 44, [2]: 123 };
+        const pattern = w.arrayFor(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      });
+      it('matches when array has one match', () => {
+        const data = ['string', 123, null];
+        const pattern = w.arrayFor(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([{ match: data, groups: {} }]);
+      });
+      it('matches when array has more than one match', () => {
+        const data = ['string', 123, null, 'other'];
+        const pattern = w.arrayFor(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([{ match: data, groups: {} }]);
+      });
+      it('matches when array has zero matches', () => {
+        const data = [undefined, 123, null];
+        const pattern = w.arrayFor(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([{ match: data, groups: {} }]);
+      });
+    });
+    describe('arrayFor', () => {
+      it('matches only arrays', () => {
+        const data = { [0]: 'test', [1]: 44, [2]: 123 };
+        const pattern = w.arrayEvery(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      });
+      it('does not when array has only one match', () => {
+        const data = ['string', 123, null];
+        const pattern = w.arrayEvery(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      });
+      it('does not match when array has more than one match', () => {
+        const data = ['string', 123, null, 'other'];
+        const pattern = w.arrayEvery(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      });
+      it('does not match when array has zero matches', () => {
+        const data = [undefined, 123, null];
+        const pattern = w.arrayEvery(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([]);
+      });
+      it('matches empty arrays', () => {
+        const data: unknown[] = [];
+        const pattern = w.arrayEvery(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([{ match: data, groups: {} }]);
+      });
+      it('matches when every item matches', () => {
+        const data = ['string', 'other', 'last'];
+        const pattern = w.arrayEvery(w.string());
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([{ match: data, groups: {} }]);
+      });
+    });
+    describe('coerce', () => {
+      it('matches when outer and inner matchers pass', () => {
+        const data = ['123', '33', 'Na'];
+        const pattern = w.coerce(
+          w.string(),
+          (v) => Number(v),
+          w.pred((v): v is number => !Number.isNaN(v)),
+        );
+        const matches = w.accumWalkMatch(data, pattern);
+        expect(matches).toEqual([
+          { match: '123', groups: {} },
+          { match: '33', groups: {} },
+        ]);
+      });
     });
   });
 });
@@ -724,5 +971,87 @@ describe('replace', () => {
       array: [1, '(string)', 2, 'test'],
     });
     expect(data.array[1]).toBe('string');
+  });
+  it('captures replacements', () => {
+    const data = {
+      nest: {
+        inner: 'test',
+      },
+    };
+    const pattern = {
+      inner: w.group(
+        w.transform(w.regex(/test/), (v) => v + v),
+        'doubled',
+      ),
+    };
+    const matches = w.accumWalkMatch(data, pattern);
+
+    expect(matches[0]?.groups.doubled[0].replacement.value).toBe('testtest');
+  });
+  it('captures replacements inside compounds', () => {
+    const data = {
+      nest: {
+        inner: { prop: 'test' },
+      },
+    };
+    const pattern = {
+      inner: w.group(
+        {
+          prop: w.transform(w.regex(/test/), (v) => v + v),
+        },
+        'doubled',
+      ),
+    };
+    const matches = w.accumWalkMatch(data, pattern);
+
+    expect(matches[0]?.groups.doubled[0].replacement.value).toEqual({
+      prop: 'testtest',
+    });
+  });
+  it('replaces inside const arrays', () => {
+    const data = {
+      nest: {
+        inner: [1, 2, 3],
+      },
+    };
+    const pattern = {
+      inner: [
+        w.transform(
+          w.pred((v) => typeof v === 'number'),
+          (v) => v * 2,
+        ),
+        w.any(),
+        w.transform(
+          w.pred((v) => typeof v === 'number'),
+          (v) => v + 2,
+        ),
+      ],
+    };
+    const matches = w.accumWalkMatch(data, pattern);
+    expect(matches[0]?.replacement?.value).toEqual({
+      inner: [2, 2, 5],
+    });
+  });
+});
+describe('ignore', () => {
+  it('ignores selected keys', () => {
+    const data = {
+      a: 1,
+      b: 2,
+      c: 4,
+    };
+    const matches = w
+      .accumWalkMatch(data, w.any(), (k) => k === 'b')
+      .map((v) => v.match);
+    expect(matches).toEqual([data, 1, 4]);
+  });
+  it('ignores selected array indexes', () => {
+    const data = {
+      array: [1, 2, 3],
+    };
+    const matches = w
+      .accumWalkMatch(data, w.any(), (k) => k === 1)
+      .map((v) => v.match);
+    expect(matches).toEqual([data, data.array, 1, 3]);
   });
 });
