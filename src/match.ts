@@ -21,6 +21,10 @@ export function matchAndCapture(
   }
   if (isObject(pattern) && isObject(v)) {
     const accGroups: CapturedGroups[] = [];
+    if (Array.isArray(pattern)) {
+      if (!Array.isArray(v)) return [false, {}];
+      if (v.length !== pattern.length) return [false, {}];
+    }
     for (const key in pattern) {
       const patternMatcher = (pattern as Record<string, unknown>)[key];
       if (!(key in v)) {
