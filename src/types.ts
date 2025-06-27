@@ -114,6 +114,9 @@ type ResolvePred<T> =
           {
             value: Resolve<Pattern>;
             groups: ResolveGroups<Pattern>;
+            replacement?: {
+              value: unknown;
+            };
           },
         ];
       }
@@ -153,7 +156,7 @@ type ResolveOrGroups<Left, Right> = {
     | ResolveGroups<Right>[P & keyof ResolveGroups<Right>];
 };
 type ToMultipleMatches<T> =
-  T extends Record<string, { value: unknown; groups: unknown }[]>
+  T extends Partial<Record<string, { value: unknown; groups: unknown }[]>>
     ? {
         [P in keyof T]?: [
           NonNullable<T[P]>[number],
@@ -162,7 +165,7 @@ type ToMultipleMatches<T> =
       }
     : never;
 type ToOneOrMore<T> =
-  T extends Record<string, { value: unknown; groups: unknown }[]>
+  T extends Partial<Record<string, { value: unknown; groups: unknown }[]>>
     ? {
         [P in keyof T]: [
           NonNullable<T[P]>[number],
@@ -171,7 +174,7 @@ type ToOneOrMore<T> =
       }
     : never;
 type ToZeroOrOne<T> =
-  T extends Record<string, { value: unknown; groups: unknown }[]>
+  T extends Partial<Record<string, { value: unknown; groups: unknown }[]>>
     ? {
         [P in keyof T]?: [NonNullable<T[P]>[number]];
       }

@@ -1,18 +1,17 @@
-import { describe, expect, it, test } from 'vitest';
+import { describe, expect, expectTypeOf, it, test } from 'vitest';
 
 import * as w from './index.js';
 
 describe('matching', () => {
   test('it matches strings', () => {
-    expect(
-      w.accumWalkMatch(
-        {
-          matches: { field: 'somestring' },
-          nonmatching: { field: 123 },
-        },
-        { field: w.string() },
-      ),
-    ).toEqual([
+    const matches = w.accumWalkMatch(
+      {
+        matches: { field: 'somestring' },
+        nonmatching: { field: 123 },
+      },
+      { field: w.string() },
+    );
+    expect(matches).toEqual([
       {
         groups: {},
         match: {
@@ -20,17 +19,26 @@ describe('matching', () => {
         },
       },
     ]);
+    type Match = {
+      groups: {};
+      match: { readonly field: string };
+      replacement?:
+        | {
+            value: unknown;
+          }
+        | undefined;
+    }[];
+    expectTypeOf(matches).toEqualTypeOf<Match>();
   });
   test('it matches any', () => {
-    expect(
-      w.accumWalkMatch(
-        {
-          matches: { field: 'somestring' },
-          nonmatching: { field: 123 },
-        },
-        { field: w.any() },
-      ),
-    ).toEqual([
+    const matches = w.accumWalkMatch(
+      {
+        matches: { field: 'somestring' },
+        nonmatching: { field: 123 },
+      },
+      { field: w.any() },
+    );
+    expect(matches).toEqual([
       {
         groups: {},
         match: {
@@ -44,14 +52,24 @@ describe('matching', () => {
         },
       },
     ]);
+    type Match = {
+      groups: {};
+      match: { readonly field: unknown };
+      replacement?:
+        | {
+            value: unknown;
+          }
+        | undefined;
+    }[];
+    expectTypeOf(matches).toEqualTypeOf<Match>();
   });
   test('it traverses arrays', () => {
-    expect(
-      w.accumWalkMatch(
-        { nest: [{ matches: 123, payload: 'hello' }, { notmatches: 444 }] },
-        { matches: 123 },
-      ),
-    ).toEqual([
+    const matches = w.accumWalkMatch(
+      { nest: [{ matches: 123, payload: 'hello' }, { notmatches: 444 }] },
+      { matches: 123 },
+    );
+
+    expect(matches).toEqual([
       {
         groups: {},
         match: {
@@ -60,49 +78,66 @@ describe('matching', () => {
         },
       },
     ]);
+
+    type Match = {
+      groups: {};
+      match: { readonly matches: 123 };
+      replacement?:
+        | {
+            value: unknown;
+          }
+        | undefined;
+    }[];
+    expectTypeOf(matches).toEqualTypeOf<Match>();
   });
   test('it matches simple objects', () => {
-    expect(
-      w
-        .accumWalkMatch(
-          {
-            nest: {
-              kind: 'test',
-              otherField: 123,
-              hidden: 3,
-            },
-          },
-          { kind: 'test', otherField: 123 },
-        )
-        .map((v) => v.match),
-    ).toEqual([
+    const matches = w.accumWalkMatch(
+      {
+        nest: {
+          kind: 'test',
+          otherField: 123,
+          hidden: 3,
+        },
+      },
+      { kind: 'test', otherField: 123 },
+    );
+    expect(matches.map((v) => v.match)).toEqual([
       {
         kind: 'test',
         otherField: 123,
         hidden: 3,
       },
     ]);
+    type Match = {
+      groups: {};
+      match: { readonly kind: 'test'; readonly otherField: 123 };
+      replacement?:
+        | {
+            value: unknown;
+          }
+        | undefined;
+    }[];
+    expectTypeOf(matches).toEqualTypeOf<Match>();
   });
 
   test('it matches optional properties', () => {
-    expect(
-      w.accumWalkMatch(
-        {
-          without: {
-            payload: 123,
-          },
-          withCorrect: {
-            payload: 444,
-            key: '1234',
-          },
-          withIncorrect: {
-            payload: 555,
-            key: 'this_should_not_match',
-          },
+    const matches = w.accumWalkMatch(
+      {
+        without: {
+          payload: 123,
         },
-        { payload: w.any(), key: w.optional(w.regex(/\d+/)) },
-      ),
-    ).toEqual([
+        withCorrect: {
+          payload: 444,
+          key: '1234',
+        },
+        withIncorrect: {
+          payload: 555,
+          key: 'this_should_not_match',
+        },
+      },
+      { payload: w.any(), key: w.optional(w.regex(/\d+/)) },
+    );
+    expect(matches).toEqual([
       {
         groups: {},
         match: {
@@ -117,26 +152,35 @@ describe('matching', () => {
         },
       },
     ]);
+    type Match = {
+      groups: {};
+      match: { readonly payload: unknown; readonly key?: string };
+      replacement?:
+        | {
+            value: unknown;
+          }
+        | undefined;
+    }[];
+    expectTypeOf(matches).branded.toEqualTypeOf<Match>();
   });
 
   test('it matches custom predicates', () => {
-    expect(
-      w.accumWalkMatch(
-        {
-          nest: {
-            kind: 'testwhyit',
-            otherField: 123,
-            hidden: 3,
-          },
+    const matches = w.accumWalkMatch(
+      {
+        nest: {
+          kind: 'testwhyit',
+          otherField: 123,
+          hidden: 3,
         },
-        {
-          otherField: w.group(
-            w.p((v) => v === 123),
-            'capture',
-          ),
-        },
-      ),
-    ).toMatchInlineSnapshot([
+      },
+      {
+        otherField: w.group(
+          w.p((v) => v === 123 || v === 444),
+          'capture',
+        ),
+      },
+    );
+    expect(matches).toMatchInlineSnapshot([
       {
         groups: {
           capture: [
@@ -153,57 +197,83 @@ describe('matching', () => {
         },
       },
     ]);
+    type Match = {
+      groups: {
+        capture: [{ groups: {}; value: 123 | 444 }];
+      };
+      match: { readonly otherField: 123 | 444 };
+      replacement?:
+        | {
+            value: unknown;
+          }
+        | undefined;
+    }[];
+    expectTypeOf(matches).branded.toEqualTypeOf<Match>();
   });
   test('it matches custom asserts', () => {
-    expect(
-      w
-        .accumWalkMatch(
-          {
-            nest: {
-              kind: 'testwhyit',
-              otherField: 123,
-              hidden: 3,
-            },
-            otherField: 444,
-          },
-          {
-            otherField: w.n((v) => {
-              if (v !== 123) throw new Error('Wrong!');
-            }),
-          },
-        )
-        .map((v) => v.match),
-    ).toEqual([
+    const matches = w.accumWalkMatch(
+      {
+        nest: {
+          kind: 'testwhyit',
+          otherField: 123,
+          hidden: 3,
+        },
+        otherField: 444,
+      },
+      {
+        otherField: w.n((v): asserts v is 123 | 33 => {
+          if (v !== 123 && v !== 33) throw new Error('Wrong!');
+        }),
+      },
+    );
+    expect(matches.map((v) => v.match)).toEqual([
       {
         kind: 'testwhyit',
         otherField: 123,
         hidden: 3,
       },
     ]);
+    type Match = {
+      groups: {};
+      match: { readonly otherField: 123 | 33 };
+      replacement?:
+        | {
+            value: unknown;
+          }
+        | undefined;
+    }[];
+    expectTypeOf(matches).branded.toEqualTypeOf<Match>();
   });
   describe('stlib asserts', () => {
     test('it matches regex strings', () => {
-      expect(
-        w
-          .accumWalkMatch(
-            {
-              nest: {
-                kind: 'testwhyit',
-                otherField: 123,
-                hidden: 3,
-              },
-              kind: { thisisnotstring: true },
-            },
-            { kind: w.regex(/why/), otherField: 123 },
-          )
-          .map((v) => v.match),
-      ).toEqual([
+      const matches = w.accumWalkMatch(
+        {
+          nest: {
+            kind: 'testwhyit',
+            otherField: 123,
+            hidden: 3,
+          },
+          kind: { thisisnotstring: true },
+        },
+        { kind: w.regex(/why/), otherField: 123 },
+      );
+      expect(matches.map((v) => v.match)).toEqual([
         {
           kind: 'testwhyit',
           otherField: 123,
           hidden: 3,
         },
       ]);
+      type Match = {
+        groups: {};
+        match: { readonly otherField: 123; readonly kind: string };
+        replacement?:
+          | {
+              value: unknown;
+            }
+          | undefined;
+      }[];
+      expectTypeOf(matches).branded.toEqualTypeOf<Match>();
     });
     describe('or', () => {
       test('it matches or', () => {
@@ -228,6 +298,8 @@ describe('matching', () => {
             hi: 'hello',
           },
         ]);
+        type Match = { readonly otherField: 123 | 44 }[];
+        expectTypeOf(matches).branded.toEqualTypeOf<Match>();
       });
       test('it matches or with three args', () => {
         const data = {
@@ -256,6 +328,8 @@ describe('matching', () => {
             otherField: 3,
           },
         ]);
+        type Match = { readonly otherField: 123 | 44 | 3 }[];
+        expectTypeOf(matches).branded.toEqualTypeOf<Match>();
       });
       test('it matches or with four args', () => {
         const data = {
@@ -288,57 +362,79 @@ describe('matching', () => {
             willSeeMe: 'hi!',
           },
         ]);
+        type Match = { readonly otherField: 123 | 44 | 3 | 666 }[];
+        expectTypeOf(matches).branded.toEqualTypeOf<Match>();
       });
     });
-    test('it matches arrays strictly as constants', () => {
-      {
+    describe('const arrays', () => {
+      it('do not match longer arrays', () => {
         const data = [1, 2, 3];
-        const pattern = [1, 2];
+        const pattern = [1, 2] as const;
         const matches = w.accumWalkMatch(data, pattern);
         expect(matches).toEqual([]);
-      }
-      {
+        type Match = {
+          groups: {};
+          match: readonly [1, 2];
+          replacement?:
+            | {
+                value: unknown;
+              }
+            | undefined;
+        }[];
+        expectTypeOf(matches).toEqualTypeOf<Match>();
+      });
+      it('do not match shorter arrays', () => {
         const data = [1, 2, 3];
         const pattern = [1, 2, 3, 4];
         const matches = w.accumWalkMatch(data, pattern);
         expect(matches).toEqual([]);
-      }
-      {
+      });
+      it('do not match array like objects', () => {
         const data = { [0]: 1, [1]: 2, [2]: 3 };
         const pattern = [1, 2, 3];
         const matches = w.accumWalkMatch(data, pattern);
         expect(matches).toEqual([]);
-      }
-      {
+      });
+      it('only match exact arrays', () => {
         const data = [1, 2, 3];
         const pattern = [1, 2, 3];
         const matches = w.accumWalkMatch(data, pattern);
         expect(matches).not.toEqual([]);
-      }
+      });
     });
     describe('and', () => {
       it('matches when both match', () => {
         const data = {
           nest: {
-            kind: 'testwhyit',
+            kind: { first: 1, second: 2, extra: '' },
             otherField: 123,
             hidden: 3,
           },
           other: {
-            kind: 'why',
+            kind: { first: 1, second: 3444, extra2: '' },
           },
         };
         const pattern = {
-          kind: w.and(w.regex(/why/), w.regex(/it/)),
+          kind: w.and({ first: 1 }, { second: 2 }),
         };
         const matches = w.accumWalkMatch(data, pattern);
         expect(matches.map((v) => v.match)).toEqual([
           {
-            kind: 'testwhyit',
+            kind: { first: 1, second: 2, extra: '' },
             otherField: 123,
             hidden: 3,
           },
         ]);
+        type Match = {
+          groups: {};
+          match: { kind: { readonly first: 1; readonly second: 2 } };
+          replacement?:
+            | {
+                value: unknown;
+              }
+            | undefined;
+        }[];
+        expectTypeOf(matches).branded.toEqualTypeOf<Match>();
       });
       it('does not match when first does not match', () => {
         const data = {
@@ -356,6 +452,16 @@ describe('matching', () => {
         };
         const matches = w.accumWalkMatch(data, pattern);
         expect(matches).toEqual([]);
+        type Match = {
+          groups: {};
+          match: { kind: string };
+          replacement?:
+            | {
+                value: unknown;
+              }
+            | undefined;
+        }[];
+        expectTypeOf(matches).branded.toEqualTypeOf<Match>();
       });
       it('does not match when second does not match', () => {
         const data = {
@@ -381,6 +487,16 @@ describe('matching', () => {
         const pattern = w.arraySome(w.string());
         const matches = w.accumWalkMatch(data, pattern);
         expect(matches).toEqual([]);
+        type Match = {
+          groups: {};
+          match: unknown[];
+          replacement?:
+            | {
+                value: unknown;
+              }
+            | undefined;
+        }[];
+        expectTypeOf(matches).branded.toEqualTypeOf<Match>();
       });
       it('matches when array has one match', () => {
         const data = ['string', 123, null];
@@ -407,6 +523,16 @@ describe('matching', () => {
         const pattern = w.arrayZeroOrOne(w.string());
         const matches = w.accumWalkMatch(data, pattern);
         expect(matches).toEqual([]);
+        type Match = {
+          groups: {};
+          match: unknown[];
+          replacement?:
+            | {
+                value: unknown;
+              }
+            | undefined;
+        }[];
+        expectTypeOf(matches).branded.toEqualTypeOf<Match>();
       });
       it('matches when array has one match', () => {
         const data = ['string', 123, null];
@@ -433,6 +559,16 @@ describe('matching', () => {
         const pattern = w.arrayFor(w.string());
         const matches = w.accumWalkMatch(data, pattern);
         expect(matches).toEqual([]);
+        type Match = {
+          groups: {};
+          match: unknown[];
+          replacement?:
+            | {
+                value: unknown;
+              }
+            | undefined;
+        }[];
+        expectTypeOf(matches).branded.toEqualTypeOf<Match>();
       });
       it('matches when array has one match', () => {
         const data = ['string', 123, null];
@@ -453,12 +589,22 @@ describe('matching', () => {
         expect(matches).toEqual([{ match: data, groups: {} }]);
       });
     });
-    describe('arrayFor', () => {
+    describe('arrayEvery', () => {
       it('matches only arrays', () => {
         const data = { [0]: 'test', [1]: 44, [2]: 123 };
         const pattern = w.arrayEvery(w.string());
         const matches = w.accumWalkMatch(data, pattern);
         expect(matches).toEqual([]);
+        type Match = {
+          groups: {};
+          match: string[];
+          replacement?:
+            | {
+                value: unknown;
+              }
+            | undefined;
+        }[];
+        expectTypeOf(matches).branded.toEqualTypeOf<Match>();
       });
       it('does not when array has only one match', () => {
         const data = ['string', 123, null];
@@ -504,12 +650,53 @@ describe('matching', () => {
           { match: '123', groups: {} },
           { match: '33', groups: {} },
         ]);
+        type Match = {
+          groups: {};
+          match: string;
+          replacement?:
+            | {
+                value: unknown;
+              }
+            | undefined;
+        }[];
+        expectTypeOf(matches).branded.toEqualTypeOf<Match>();
       });
     });
   });
 });
 
 describe('capturing', () => {
+  it('correctly types optional captures inside optional captures', () => {
+    const data = {
+      it: {
+        array: [{ matches: '1' }],
+      },
+    };
+    const pattern = {
+      it: w.optional({
+        array: w.or([], [{ matches: w.group(w.string(), 'optional') }]),
+      }),
+    };
+    const matches = w.accumWalkMatch(data, pattern);
+    type Match = {
+      match: {
+        it?: {
+          array: readonly [] | readonly [{ matches: string }];
+        };
+      };
+      groups: {
+        optional?: [
+          {
+            value: string;
+            groups: {};
+            replacement?: { value: unknown };
+          },
+        ];
+      };
+      replacement?: { value: unknown } | undefined;
+    };
+    expectTypeOf(matches).branded.toEqualTypeOf<Match[]>();
+  });
   test.skip('it captures every array member that matches', () => {
     expect(
       w.accumWalkMatch(
@@ -986,7 +1173,7 @@ describe('replace', () => {
     };
     const matches = w.accumWalkMatch(data, pattern);
 
-    expect(matches[0]?.groups.doubled[0].replacement.value).toBe('testtest');
+    expect(matches[0]?.groups.doubled[0].replacement?.value).toBe('testtest');
   });
   it('captures replacements inside compounds', () => {
     const data = {
@@ -1004,7 +1191,7 @@ describe('replace', () => {
     };
     const matches = w.accumWalkMatch(data, pattern);
 
-    expect(matches[0]?.groups.doubled[0].replacement.value).toEqual({
+    expect(matches[0]?.groups.doubled[0].replacement?.value).toEqual({
       prop: 'testtest',
     });
   });

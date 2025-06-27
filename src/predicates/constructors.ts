@@ -11,12 +11,10 @@ import {
   Group,
   Optional,
   Or,
-  Pred,
   Regex,
   Transform,
 } from './classes.js';
 
-export type CustomPredicate = Pred;
 export const pred = <const T>(pred: (node: unknown) => node is T) =>
   new CustomPred(pred);
 
@@ -24,8 +22,7 @@ export const coerce = <const A, const B, const C>(
   matcherOverOriginal: A,
   coercer: (node: Resolve<A>, groups: ResolveGroups<A>) => B,
   matcherOverCoerced: C,
-): CustomPredicate =>
-  new Coerce(matcherOverOriginal, coercer, matcherOverCoerced);
+) => new Coerce(matcherOverOriginal, coercer, matcherOverCoerced);
 export const optional = <const P>(pattern: P) => new Optional(pattern);
 export const group = <const P, const G extends string>(
   pattern: P,

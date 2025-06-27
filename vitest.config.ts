@@ -5,5 +5,8 @@ export default defineConfig({
     coverage: {
       include: ['src/'],
     },
+    typecheck: {
+      include: ['src/**/*.test.ts'],
+    },
   },
 });

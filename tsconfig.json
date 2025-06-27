@@ -11,6 +11,5 @@
     "types": [],
     "esModuleInterop": true
   },
-  "include": ["./**/*", "./**/*.json"],
-  "exclude": ["tsconfig.json", "tsconfig-build.json"]
+  "include": ["./src", "./examples"]
 }
