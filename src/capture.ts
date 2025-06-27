@@ -12,5 +12,5 @@ export function mergeCapturedGroups(
 }
 export type CapturedGroups = Record<
   string,
-  { value: unknown; groups: CapturedGroups }[]
+  { value: unknown; groups: CapturedGroups; replacement?: { value: unknown } }[]
 >;

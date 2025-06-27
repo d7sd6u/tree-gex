@@ -640,3 +640,74 @@ describe('capturing', () => {
     );
   });
 });
+
+describe('replace', () => {
+  test('it works!', () => {
+    const data = {
+      field: 'string',
+      other: 'otherstring',
+      notstring: 123,
+      totallynotstring: '123',
+    };
+    const res = w.walkReplace(
+      data,
+      w.transform(w.regex(/string/), (m) => `(${m})`),
+    );
+
+    expect(res).toEqual({
+      field: '(string)',
+      other: '(otherstring)',
+      notstring: 123,
+      totallynotstring: '123',
+    });
+    expect(data.field).toBe('string');
+  });
+  test('it bails on match', () => {
+    const data = {
+      type: 'Item',
+      nested: {
+        type: 'Item',
+        val: 123,
+      },
+    };
+    const res = w.walkReplace(
+      data,
+      w.transform({ type: 'Item' }, (m) => ({ ...m, payload: 333 })),
+    );
+
+    expect(res).toEqual({
+      type: 'Item',
+      nested: {
+        type: 'Item',
+        val: 123,
+      },
+      payload: 333,
+    });
+    expect(data).not.toHaveProperty('payload');
+  });
+  test('it replaces deep in the data', () => {
+    const data = {
+      type: 'Item',
+      nested: {
+        type: 'Item',
+        val: 123,
+      },
+    };
+    const res = w.walkReplace(
+      data,
+      w.transform({ val: w.pred((v) => typeof v === 'number') }, (m) => ({
+        ...m,
+        val: 333,
+      })),
+    );
+
+    expect(res).toEqual({
+      type: 'Item',
+      nested: {
+        type: 'Item',
+        val: 333,
+      },
+    });
+    expect(data.nested.val).toBe(123);
+  });
+});

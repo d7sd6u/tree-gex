@@ -1,8 +1,7 @@
 import { CapturedGroups, mergeCapturedGroups } from '../capture.js';
-import { matchAndCapture } from '../match.js';
+import { MatcherRes, matchAndCapture } from '../match.js';
 import { Resolve, ResolveGroups } from '../types.js';
 
-type MatcherRes = [matches: boolean, groups: CapturedGroups];
 export abstract class Pred {
   public abstract matches(node: unknown): MatcherRes;
 }
@@ -16,6 +15,24 @@ export class Regex extends Pred {
   }
 
   [regexSymbol] = 123;
+}
+const transformSymbol = Symbol();
+export class Transform<const M, const T> extends Pred {
+  constructor(
+    private matcher: M,
+    private transformer: (value: Resolve<M>, groups: ResolveGroups<M>) => T,
+  ) {
+    super();
+  }
+  public override matches(node: unknown): MatcherRes {
+    const [match, groups] = matchAndCapture(node, this.matcher, undefined);
+    return [
+      match,
+      groups,
+      this.transformer(node as Resolve<M>, groups as ResolveGroups<M>),
+    ];
+  }
+  [transformSymbol] = 123;
 }
 const orSymbol = Symbol();
 export class Or<const T, const V> extends Pred {

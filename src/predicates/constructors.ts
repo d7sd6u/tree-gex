@@ -12,6 +12,7 @@ import {
   Or,
   Pred,
   Regex,
+  Transform,
 } from './classes.js';
 
 export type CustomPredicate = Pred;
@@ -39,7 +40,10 @@ export const nothrow = <const T>(v: (node: unknown) => asserts node is T) =>
     }
   });
 export { pred as p, nothrow as n, nothrow as a, nothrow as assert };
-
+export const transform = <const P, const T>(
+  m: P,
+  t: (m: Resolve<P>, g: ResolveGroups<P>) => T,
+) => new Transform(m, t);
 export const regex = (r: RegExp) => new Regex(r);
 export const any = () => new Any();
 export const string = () => new CustomPred((v) => typeof v === 'string');
