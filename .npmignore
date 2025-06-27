@@ -1,0 +1,11 @@
+.direnv
+.vscode
+node_modules
+coverage
+*.tgz
+src
+examples
+README.md
+flake*
+tsconfig.json
+.*
